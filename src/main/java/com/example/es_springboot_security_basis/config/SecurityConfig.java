@@ -33,7 +33,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest()
                 .authenticated() // Каждый запрос должен быть аутентифицирован
                 .and()
-                .httpBasic(); // Использование Base64 для шифрования
+                .formLogin(); // Использование вместо httpBasic()
+
     }
 
     // Создание пользователей и паролей в памяти
