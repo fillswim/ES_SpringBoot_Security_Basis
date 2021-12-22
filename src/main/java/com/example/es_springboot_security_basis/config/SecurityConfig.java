@@ -1,5 +1,6 @@
 package com.example.es_springboot_security_basis.config;
 
+import com.example.es_springboot_security_basis.model.Permission;
 import com.example.es_springboot_security_basis.model.Role;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,9 +32,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/")
                 .permitAll()
-                .antMatchers(HttpMethod.GET, "/api/**").hasAnyRole(Role.ADMIN.name(), Role.USER.name()) // Все, что идет на эти api, должно быть с ролями;
-                .antMatchers(HttpMethod.POST, "/api/**").hasRole(Role.ADMIN.name()) // Только админ имеет право на запись
-                .antMatchers(HttpMethod.DELETE, "/api/**").hasRole(Role.ADMIN.name()) // Только админ имеет право на удаление
+                .antMatchers(HttpMethod.GET, "/api/**").hasAuthority(Permission.DEVELOPERS_READ.getPermission()) // Работа с permission
+                .antMatchers(HttpMethod.POST, "/api/**").hasAuthority(Permission.DEVELOPERS_WRITE.getPermission()) // Работа с permission
+                .antMatchers(HttpMethod.DELETE, "/api/**").hasAuthority(Permission.DEVELOPERS_WRITE.getPermission()) // Работа с permission
                 .anyRequest()
                 .authenticated() // Каждый запрос должен быть аутентифицирован
                 .and()
@@ -49,13 +50,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 User.builder()
                         .username("admin")
                         .password(passwordEncoder().encode("admin"))
-                        .roles(Role.ADMIN.name())
+                        .authorities(Role.ADMIN.getAuthorities()) // Добавление разрешений SimpleGrantedAuthority
                         .build(),
 
                 User.builder()
                         .username("user")
                         .password(passwordEncoder().encode("user"))
-                        .roles(Role.USER.name())
+                        .authorities(Role.USER.getAuthorities()) // Добавление разрешений SimpleGrantedAuthority
                         .build()
         );
     }
