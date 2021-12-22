@@ -25,6 +25,7 @@ public class DeveloperRestController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('developers:read')") // Заменяет .antMatchers(HttpMethod.POST, "/api/**").hasAuthority(Permission.DEVELOPERS_WRITE.getPermission())
     public Developer getById(@PathVariable Long id) {
 
         return DEVELOPERS.stream()
@@ -35,6 +36,7 @@ public class DeveloperRestController {
 
     // Добавляет разработчика в БД
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('developers:write')")
     public Developer create(@RequestBody Developer developer) {
         this.DEVELOPERS.add(developer);
         return developer;
@@ -42,6 +44,7 @@ public class DeveloperRestController {
 
     // Удаляет разработчика из БД
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('developers:write')")
     public void deleteById(@PathVariable Long id) {
         this.DEVELOPERS.removeIf(developer -> developer.getId().equals(id));
     }
