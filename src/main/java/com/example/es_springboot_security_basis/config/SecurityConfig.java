@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +34,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest()
                 .authenticated() // Каждый запрос должен быть аутентифицирован
                 .and()
-                .formLogin(); // Использование вместо httpBasic()
+                .formLogin() // Использование вместо httpBasic()
+                .loginPage("/auth/login").permitAll() // созданная страница логина, к которой все имеют доступ
+                .defaultSuccessUrl("/auth/success") // Если логин будет пройден успешно, тогда перейдем на эту страницу
+                .and()
+                .logout() // Конфигурация логаута
+                .logoutRequestMatcher(new AntPathRequestMatcher("/auth/logout", "POST"))
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
+                .logoutSuccessUrl("/auth/login");
 
     }
 
