@@ -1,22 +1,17 @@
 package com.example.es_springboot_security_basis.config;
 
-import com.example.es_springboot_security_basis.model.Role;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.example.es_springboot_security_basis.security.JwtConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
 
 @Configuration
 @EnableWebSecurity
@@ -26,55 +21,36 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     // Аутентификация   - (Ошибка 401) Разграничение на друзей и врагов
     // Авторизация      - (Ошибка 403) К каким страницам и каким ресурсам человек имеет доступ
 
-    // UserDetailsService заменяется собственной реализацией
-    private final UserDetailsService userDetailsService;
+    private final JwtConfigurer jwtConfigurer;
 
-    @Autowired
-    public SecurityConfig(@Qualifier("userDetailsServiceImpl") UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
+    public SecurityConfig(JwtConfigurer jwtConfigurer) {
+        this.jwtConfigurer = jwtConfigurer;
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-
-        // Будет использоваться своя конфигурация
         http
                 .csrf().disable() // Отключение csrf
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) // не используем сессии
+                .and()
                 .authorizeRequests()
-                .antMatchers("/")
-                .permitAll()
+                .antMatchers("/").permitAll() // Доступен для всех
+                .antMatchers("/api/auth/login").permitAll() // Доступен для всех
                 .anyRequest()
                 .authenticated() // Каждый запрос должен быть аутентифицирован
                 .and()
-                .formLogin() // Использование вместо httpBasic()
-                .loginPage("/auth/login").permitAll() // созданная страница логина, к которой все имеют доступ
-                .defaultSuccessUrl("/auth/success") // Если логин будет пройден успешно, тогда перейдем на эту страницу
-                .and()
-                .logout() // Конфигурация логаута
-                .logoutRequestMatcher(new AntPathRequestMatcher("/auth/logout", "POST"))
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
-                .deleteCookies("JSESSIONID")
-                .logoutSuccessUrl("/auth/login");
-
+                .apply(jwtConfigurer); // в дальнейшем, конфигурация пользователя будет осуществляться на основании JwtConfigurer
     }
 
+    @Bean
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(daoAuthenticationProvider());
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
     }
 
     @Bean
     protected PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
-    }
-
-    @Bean
-    protected DaoAuthenticationProvider daoAuthenticationProvider() {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
-        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
-        return daoAuthenticationProvider;
     }
 
 }
